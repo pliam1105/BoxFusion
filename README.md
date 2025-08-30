@@ -20,8 +20,9 @@ This repository includes the public implementation of BoxFusion.
 
 - [x] Release the codes and demos.
 - [ ] Release the online ROS demo for detecting neighboring objects while the user/agent is scanning.
+- [ ] Release the evaluation code.
 
-## Installation
+## 1. Installation
 
 Please create the virtual environment with python3.10 and a recent 2.x build of PyTorch. The code has been tested on Ubuntu22.04 and CUDA 11.8. The environment can be created like:
 
@@ -39,7 +40,7 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-## Quick Start
+## 2. Quick Start
 
 1.Download the pre-trained RGB-D model [Cubify Anything](https://github.com/apple/ml-cubifyanything?tab=readme-ov-file#running-the-cutr-models). Please the follow the license of Cubify Anything. Similarly, you need to download the [CLIP](https://huggingface.co/laion/CLIP-ViT-H-14-laion2B-s32B-b79K/blob/main/open_clip_pytorch_model.bin). After you download these models, please move them into the `model` folder.
 ```
@@ -56,7 +57,7 @@ python demo.py CA1M --model-path ./models/cutr_rgbd.pth  --config ./config/ca1m.
 
 
 
-## Data Preparation
+## 3. Data Preparation
 Basically, we organize the data like most SLAM methods. There are two datasets we utilize in the benchmark: [CA-1M](https://github.com/apple/ml-cubifyanything) and [ScanNetV2](http://www.scan-net.org/). If you want to test all sequences on these two datasets, please follow the steps in this section.
 
 ### CA-1M
@@ -114,7 +115,7 @@ ScanNet/
 ```
 </details>
 
-## Run
+## 4. Run
 In this section, we introduce how to run a given sequence (CA-1M dataset or ScanNetV2). After you have prepared the datasets according to the instructions above, you can run the following commands to try BoxFusion on the specific sequence.
 ### CA-1M
 Please change the `datadir` in the `config/ca1m.yaml` to root of your processed CA-1M dataset. Customize the `--seq` to the sequence you want to try.
