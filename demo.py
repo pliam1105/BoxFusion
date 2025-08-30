@@ -325,10 +325,14 @@ def run(cfg, model, dataset, clip_model, preprocess, tokenized_text, text_featur
                 class_idx = np.array([class_list.index(c) for c in all_pred_box.categories]) #[N]
 
                 boxes_3d = all_pred_box.pred_boxes_3d.corners.cpu().numpy() # [N,8,3]
-                save_list = [[(int(0), (boxes_3d[n]), 1.0) for n in range(len(all_pred_box))]] # list of tuples class_idx[n]
+                if cfg['dataset'] == 'scannet':
+                    boxes_3d = post_process(boxes_3d)
+                    
+                if boxes_3d.shape[0]>0:
+                    save_list = [[(int(0), (boxes_3d[n]), 1.0) for n in range(len(all_pred_box))]] # list of tuples class_idx[n]
 
-                save_box(save_list, os.path.join(cfg['data']['output_dir'], video_id[0]+"_boxes.pkl"))
-
+                    save_box(save_list, os.path.join(cfg['data']['output_dir'], video_id[0]+"_boxes.pkl"))
+                    
             exit(0)
             break
 

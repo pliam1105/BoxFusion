@@ -291,6 +291,25 @@ def get_dataset(config):
     
     return dataset(config,)
 
+def post_process(boxes, threshold=0.3):
+
+    min_vals = np.min(boxes, axis=1)  # [N, 3] 
+    max_vals = np.max(boxes, axis=1)  # [N, 3] 
+    ranges = max_vals - min_vals     # [N, 3]
+    
+
+    valid_x = ranges[:, 0] >= threshold
+    valid_y = ranges[:, 1] >= threshold
+    valid_z = ranges[:, 2] >= threshold
+    
+    valid_mask = valid_x & valid_y & valid_z
+    
+    boxes = boxes[valid_mask]
+    
+    return boxes
+
+
+
 
 def save_box(data, filename):
     """Save list data to pickle file
@@ -300,8 +319,7 @@ def save_box(data, filename):
         filename: Filename (default: object_data.pkl)
     """
     with open(filename, 'wb') as file:
-        # Use highest protocol version to ensure best performance and compatibility
-        # print("data",data)
+        
         pickle.dump(data, file, protocol=pickle.HIGHEST_PROTOCOL)
     print(f"Results successfully saved to {filename}")
 
