@@ -42,7 +42,7 @@ pip install -e .
 
 ## 2. Quick Start
 
-1.Download the pre-trained RGB-D model [Cubify Anything](https://github.com/apple/ml-cubifyanything?tab=readme-ov-file#running-the-cutr-models). Please the follow the license of Cubify Anything. Similarly, you need to download the [CLIP](https://huggingface.co/laion/CLIP-ViT-H-14-laion2B-s32B-b79K/blob/main/open_clip_pytorch_model.bin). After you download these models, please move them into the `model` folder.
+1.Download the pre-trained RGB-D model [Cubify Anything](https://github.com/apple/ml-cubifyanything?tab=readme-ov-file#running-the-cutr-models). Please the follow the license of Cubify Anything. Similarly, you need to download the [CLIP](https://huggingface.co/laion/CLIP-ViT-H-14-laion2B-s32B-b79K/blob/main/open_clip_pytorch_model.bin). After you download these models, please move them into the `models` folder.
 ```
 models
   |-- cutr_rgbd.pth
