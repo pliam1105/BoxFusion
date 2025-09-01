@@ -93,8 +93,8 @@ Please follow the process of [ScanNetV2](http://www.scan-net.org/) to download t
 
 ```
 ScanNet/
-├── scans/
-│   ├── scene0xxx_0x/
+├── scene0xxx_0x/
+│   ├── frames/
 │   │   ├── color/
 │   │   │   ├── 0.jpg
 │   │   │   ├── 1.jpg
@@ -109,9 +109,9 @@ ScanNet/
 │   │   │   └── ...
 │   │   ├── intrinsic/
 │   │   │   └── intrinsic_depth.txt
-│   │   └── scene0xxx_0x.txt
-│   │   └── scene0xxx_0x_vh_clean_2.ply
-│   └── ...
+│   └── scene0xxx_0x.txt
+│   └── scene0xxx_0x_vh_clean_2.ply
+└── ...
 ```
 </details>
 
