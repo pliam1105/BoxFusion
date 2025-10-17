@@ -346,7 +346,7 @@ if __name__ == "__main__":
     parser.add_argument("--seq", default='None', type=str, help="config_path")
     parser.add_argument("--class_txt", default='./data/panoptic_categories_nomerge.txt', type=str, help="config_path")
     parser.add_argument("--every-nth-frame", default=None, type=int, help="Load every `n` frames")
-    parser.add_argument("--viz-on-gt-points", default=True, action="store_true", help="Backproject the GT depth to form a point cloud in order to visualize the predictions")
+    parser.add_argument("--viz-on-gt-points", default=False, action="store_true", help="Backproject the GT depth to form a point cloud in order to visualize the predictions")
     parser.add_argument("--device", default="cpu", help="Which device to push the model to (cpu, mps, cuda)")
     parser.add_argument("--video-ids", nargs="+", help="Subset of videos to execute on. By default, all. Ignored if a tar file is explicitly given or in stream mode.")
 
@@ -356,33 +356,33 @@ if __name__ == "__main__":
     dataset_path = args.dataset_path
     use_cache = False
     
-    if dataset_path.lower() in ["scannet", "ca1m"]:
-        if not os.path.exists(args.config):
-            raise ValueError("Missing config path")
-        else:
-            with open(args.config, 'r') as  f:
-                cfg = yaml.full_load(f)
-        # load the customized sequence if given by the user
-        if args.seq is not None:
-            if dataset_path.lower()=='ca1m':
-                if 'example' in cfg['data']['datadir']:
-                    current_file_path = os.path.abspath(__file__)
-                    current_dir = os.path.dirname(current_file_path)
-                    cfg['data']['datadir'] = os.path.join(current_dir, cfg['data']['datadir'])
+    if not os.path.exists(args.config):
+        raise ValueError("Missing config path")
+    else:
+        with open(args.config, 'r') as  f:
+            cfg = yaml.full_load(f)
+    # load the customized sequence if given by the user
+    if args.seq is not None:
+        if dataset_path.lower()=='ca1m':
+            if 'example' in cfg['data']['datadir']:
+                current_file_path = os.path.abspath(__file__)
+                current_dir = os.path.dirname(current_file_path)
+                cfg['data']['datadir'] = os.path.join(current_dir, cfg['data']['datadir'])
 
-                else:
-                    new_datadir = os.path.join(os.path.dirname(os.path.dirname(cfg['data']['datadir'])),  args.seq+'/')
-                    cfg['data']['datadir'] = new_datadir
-
-                
             else:
-                new_datadir = os.path.join(os.path.dirname(os.path.dirname(cfg['data']['datadir'])),  args.seq+'/frames/')
+                new_datadir = os.path.join(os.path.dirname(os.path.dirname(cfg['data']['datadir'])),  args.seq+'/')
                 cfg['data']['datadir'] = new_datadir
-                
-            # eval only
-            if os.path.exists(os.path.join(cfg['data']['output_dir'],args.seq+"_boxes.pkl")) and cfg["eval"]:
-                print("Results for boxes already exist, skip evaluation")
-                sys.exit(0)
+
+            
+        else:
+            pass
+            # new_datadir = os.path.join(os.path.dirname(os.path.dirname(cfg['data']['datadir'])),  args.seq+'/frames/')
+            # cfg['data']['datadir'] = new_datadir
+            
+        # eval only
+        if os.path.exists(os.path.join(cfg['data']['output_dir'],args.seq+"_boxes.pkl")) and cfg["eval"]:
+            print("Results for boxes already exist, skip evaluation")
+            sys.exit(0)
         
         dataset = get_dataset(cfg)
 
@@ -394,7 +394,7 @@ if __name__ == "__main__":
     model = make_cubify_transformer(dimension=backbone_embedding_dimension, depth_model=is_depth_model).eval()
     model.load_state_dict(checkpoint)
 
-    dataset.load_arkit_depth = True
+    # dataset.load_arkit_depth = True
     if args.every_nth_frame is not None:
         dataset = itertools.islice(dataset, 0, None, args.every_nth_frame)
 

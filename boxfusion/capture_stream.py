@@ -312,12 +312,8 @@ class CA1MDataset(IterableDataset):
         self.cx = self.K[0,2]
         self.cy = self.K[1,2]
 
-        if self.K[0,2]< self.K[1,2]:
-            self.img_height=cfg["cam"]["W"] #l
-            self.img_width=cfg["cam"]["H"] #s
-        else:
-            self.img_height=cfg["cam"]["H"]
-            self.img_width=cfg["cam"]["W"]
+        self.img_height=cfg["cam"]["W"] #l
+        self.img_width=cfg["cam"]["H"] #s
 
 
         self.depth_scale = cfg['cam']['png_depth_scale']

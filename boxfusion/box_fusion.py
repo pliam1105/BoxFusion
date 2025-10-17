@@ -47,12 +47,8 @@ class BoxFusion(object):
                             [0.0, depth_intric[1,1], depth_intric[1,2],0.0],
                             [0.0,0.0,1.0,0.0],
                             [0.0,0.0,0.0,1.0]])
-            if self.K[0,2] < self.K[1,2]:
-                self.H=cfg["cam"]["W"] #l
-                self.W=cfg["cam"]["H"] #s
-            else:
-                self.H=cfg["cam"]["H"]
-                self.W=cfg["cam"]["W"]
+            self.H=cfg["cam"]["W"] #l
+            self.W=cfg["cam"]["H"] #s
         self.update_K_flag=False
 
         self.fusion_iters = cfg["box_fusion"]["iters"]
