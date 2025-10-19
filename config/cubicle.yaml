@@ -10,7 +10,7 @@ data:
 cam:
   H: 518
   W: 392
-  png_depth_scale: 100.
+  png_depth_scale: 400.
 
 
 detection:
