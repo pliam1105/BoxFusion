@@ -81,6 +81,30 @@ def get_camera_to_gravity_transform(pose, current, target=ImageOrientation.UPRIG
 
     return torch.tensor(T).to(pose)
 
+def check_first_camera(pose):
+    z_vec = pose[..., 2, :3]
+    z_orien = torch.tensor(np.array(
+        [
+            [0.0, -1.0, 0.0],  # upright
+            [-1.0, 0.0, 0.0],  # left
+            [0.0, 1.0, 0.0],  # upside-down
+            [1.0, 0.0, 0.0], # right
+            [0.0, 0.0, 1.0], # first camera
+        ]
+    )).to(pose)
+
+    corr = (z_orien @ z_vec.T).T
+    corr_max = corr.argmax(dim=-1)
+
+    return corr_max == 4
+
+def first_camera_to_upright(pose):
+    rot_z = torch.tensor(Rotation.from_euler('x', -np.pi/2.0).as_matrix()).float().to(pose)
+    rot_z_4x4 = torch.eye(4, device=pose.device).float()
+    rot_z_4x4[:3, :3] = rot_z
+
+    return rot_z_4x4 @ pose
+
 MAX_LONG_SIDE = 1024
 
 
@@ -322,6 +346,9 @@ class CA1MDataset(IterableDataset):
         matches = re.findall(pattern, cfg['data']['datadir'])
         self.video_id = matches
 
+        self.got_first_camera = False
+        self.first_camera = False
+
 
     def load_poses(self, path):
         self.poses = np.load(path).reshape(-1,4,4)
@@ -420,6 +447,14 @@ class CA1MDataset(IterableDataset):
             # and T_gravity.
             RT = torch.from_numpy(pose.astype(np.float32).reshape((4, 4)))
             wide.RT = RT[None]
+            
+            if not self.got_first_camera:
+                self.first_camera = check_first_camera(wide.RT)
+                self.got_first_camera = True
+
+            if self.first_camera:
+                # transform so that first camera is considered upright
+                wide.RT = first_camera_to_upright(wide.RT)
 
             current_orientation = wide.orientation
             target_orientation = ImageOrientation.UPRIGHT
