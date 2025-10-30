@@ -345,6 +345,7 @@ if __name__ == "__main__":
     parser.add_argument("--clip_path", default='./models/open_clip_pytorch_model.bin', type=str, help="Path to the CLIP model")
     parser.add_argument("--seq", default='None', type=str, help="config_path")
     parser.add_argument("--class_txt", default='./data/panoptic_categories_nomerge.txt', type=str, help="config_path")
+    parser.add_argument("--class_features", default='./data/class_features.pt', type=str)
     parser.add_argument("--every-nth-frame", default=None, type=int, help="Load every `n` frames")
     parser.add_argument("--viz-on-gt-points", default=False, action="store_true", help="Backproject the GT depth to form a point cloud in order to visualize the predictions")
     parser.add_argument("--device", default="cpu", help="Which device to push the model to (cpu, mps, cuda)")
@@ -405,6 +406,7 @@ if __name__ == "__main__":
         model = model.to(args.device)
         clip_model, preprocess = load_clip(args.clip_path)
         text_class = np.genfromtxt(args.class_txt, delimiter='\n', dtype=str) 
-        text_features = torch.load('./data/class_features.pt').cuda()
+        text_features = torch.load(args.class_features).cuda()
+        # print(text_features)
 
     run(cfg, model, dataset, clip_model, preprocess, text_class, text_features, augmentor, preprocessor, score_thresh=cfg['detection']['score_thresh'], viz_on_gt_points=args.viz_on_gt_points, gap=cfg["data"]["gap"], re_vis=cfg['vis']['rerun'])
