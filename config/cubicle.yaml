@@ -20,11 +20,12 @@ detection:
   floor_mask: True 
   floor_ratio: 15
   scale_box: 1.5
+  class_sim_thres: 20.0
 
 association:
-  small_threshold: 0.2
-  rotation_gap: 30 
-  translation_gap: 0.8 
+  small_threshold: 0.1
+  rotation_gap: 45 
+  translation_gap: 1.5 
 
 
 

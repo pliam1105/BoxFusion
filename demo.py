@@ -217,7 +217,7 @@ def run(cfg, model, dataset, clip_model, preprocess, tokenized_text, text_featur
                 #scale the boxes by
                 boxes = scale_boxes(boxes,image.shape[0],image.shape[1],scale=1.5)
 
-                class_results, box_features = text_prompt(boxes, tokenized_text, text_features, image, clip_model, preprocess) #[N_box]
+                class_results, box_features = text_prompt(boxes, tokenized_text, text_features, image, clip_model, preprocess, cfg["detection"]["class_sim_thres"]) #[N_box]
                 pred_instances.categories = class_results
 
                 all_pred_box = pred_instances
@@ -298,7 +298,7 @@ def run(cfg, model, dataset, clip_model, preprocess, tokenized_text, text_featur
                         # scale the boxes
                         boxes = scale_boxes(boxes,image.shape[0],image.shape[1],scale=cfg['detection']['scale_box'])
                         # if len(pred_instances)>0:
-                        class_results, box_features = text_prompt(boxes, tokenized_text, text_features, image, clip_model, preprocess) #[N_box]
+                        class_results, box_features = text_prompt(boxes, tokenized_text, text_features, image, clip_model, preprocess, cfg["detection"]["class_sim_thres"]) #[N_box]
                         all_pred_box.categories[cur_keep_idx_in_all] = class_results
 
                 else: # no new box

@@ -71,6 +71,7 @@ def visualize_online_boxes(instances, prefix, boxes_3d_name="gt_boxes_3d", log_i
 
 
     exclude_mask = np.arange(ids.shape[0],dtype=int)
+    exclude_mask = np.where(ids[exclude_mask] != "")
 
     rerun.log(
         f"{prefix}/{log_instances_name}",
@@ -459,7 +460,7 @@ def crop_image(boxes, rgb):
 
     return cropped_boxes, cropped_images
 
-def text_prompt(boxes, class_prompt, text_features, img_path, clip_model, preprocess):
+def text_prompt(boxes, class_prompt, text_features, img_path, clip_model, preprocess, sim_thres=0.0):
     cropped_boxes, cropped_images= crop_image(
         boxes, img_path
     )
@@ -468,6 +469,9 @@ def text_prompt(boxes, class_prompt, text_features, img_path, clip_model, prepro
     scores, img_features = retriev(
         clip_model, preprocess, cropped_images, text_features, device="cuda:0"
     )
+
+    scores = torch.cat([scores, torch.full_like(scores, sim_thres)[...,:1]], dim=-1)
+    class_prompt = np.concatenate([class_prompt, np.full_like(class_prompt, "")[...,:1]], axis=-1)
 
     max_values, max_id = torch.max(scores, dim=-1) #
     max_id = max_id.cpu().numpy()
