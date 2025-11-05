@@ -14,18 +14,18 @@ cam:
 
 
 detection:
-  score_thresh: 0.4 
+  score_thresh: 0.6
   uv_bound: True
   uv_bound_value: 0.9
   floor_mask: True 
   floor_ratio: 15
-  scale_box: 1.0
-  class_sim_thres: 25.0
+  scale_box: 1.5
+  class_sim_thres: 25
 
 association:
   small_threshold: 0.2
   rotation_gap: 90
-  translation_gap: 0.3
+  translation_gap: 2.0
 
 
 
@@ -40,7 +40,7 @@ box_fusion:
     shape_init_size: 0.5 
     shape_scaling_coefficient: 0.5 
   check_valid: False
-  nms_threshold: 0.5
+  nms_threshold: 0.1
   small_size: 0.5 
 
 

@@ -430,7 +430,7 @@ class Instances3D:
             '''
             only deal with the small ones length/weight/height < 35cm
             '''
-            if np.max(cur_box_size)>cfg['box_fusion']['small_size'] or idx in cur_success_nms:
+            if np.max(cur_box_size)>cfg['box_fusion']['small_size'] or idx in cur_success_nms: # TODO Change to min? to handle thin objects whose 3D IoU is not that good?
                 continue
             small_idx.append(idx)
 

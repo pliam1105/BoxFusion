@@ -71,15 +71,20 @@ def visualize_online_boxes(instances, prefix, boxes_3d_name="gt_boxes_3d", log_i
 
 
     exclude_mask = np.arange(ids.shape[0],dtype=int)
-    exclude_mask = np.where(ids[exclude_mask] != "")
+    # print(ids)
+    print(f'exclude mask before filtering: {exclude_mask}')
+    # print(ids.shape)
+    exclude_mask = np.where(ids[exclude_mask] != "")[0]
+    print(f'after: {exclude_mask}')
+    
 
     rerun.log(
         f"{prefix}/{log_instances_name}",
         rerun.Boxes3D(
             centers=all_centers[exclude_mask],
             sizes=all_sizes[exclude_mask],
-            quaternions=all_quaternions,
-            colors=all_colors,
+            quaternions=[all_quaternions[i] for i in exclude_mask],
+            colors=[all_colors[i] for i in exclude_mask],
             labels=ids[exclude_mask],
             show_labels=show_label),
         **kwargs)
