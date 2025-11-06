@@ -582,7 +582,7 @@ class Instances3D:
             xmax, ymax, zmax = np.max(all_corners, axis=0)
 
            
-            num_samples_per_axis = 10
+            num_samples_per_axis = 25
 
             
             x_samples = np.linspace(xmin, xmax, num_samples_per_axis)
