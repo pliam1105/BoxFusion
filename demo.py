@@ -143,17 +143,31 @@ def run(cfg, model, dataset, clip_model, preprocess, tokenized_text, text_featur
             if cfg["detection"]["floor_mask"]:
                 floor_mask = box_manager.check_floor_mask(pred_instances.pred_boxes_3d.tensor, ratio=cfg["detection"]["floor_ratio"])
                 pred_instances = pred_instances[~floor_mask]
+            if cfg["detection"]["size_max_thres"]:
+                large_mask = box_manager.check_large_mask(pred_instances.pred_boxes_3d.tensor,thres=cfg["detection"]["size_max_thres"])
+                pred_instances = pred_instances[~large_mask]
 
-           # avoid first frame empty predictions
-            if len(pred_instances) == 0 and count ==0:
-                with torch.no_grad():
-                    pred_instances = model(packaged)[0]
-                pred_instances = pred_instances[pred_instances.scores >= float(cfg['detection']['score_thresh']/4)]
-                print("again",count,"pred_instances",len(pred_instances))
-                if cfg["detection"]["uv_bound"]:
-                    uv_mask = box_manager.check_uv_bounds(pred_instances.pred_proj_xy,image.shape[1],image.shape[0],ratio=cfg["detection"]["uv_bound_value"]) #[N]
-                    pred_instances = pred_instances[uv_mask]
-                print("again",count,"pred_instances",len(pred_instances))
+            # avoid first frame empty predictions
+            # if len(pred_instances) == 0 and count ==0:
+            #     with torch.no_grad():
+            #         pred_instances = model(packaged)[0]
+            #     pred_instances = pred_instances[pred_instances.scores >= float(cfg['detection']['score_thresh']/4)]
+            #     print("again",count,"pred_instances",len(pred_instances))
+            #     if cfg["detection"]["uv_bound"]:
+            #         uv_mask = box_manager.check_uv_bounds(pred_instances.pred_proj_xy,image.shape[1],image.shape[0],ratio=cfg["detection"]["uv_bound_value"]) #[N]
+            #         pred_instances = pred_instances[uv_mask]
+            #     print("again",count,"pred_instances",len(pred_instances))
+            # else:
+            if len(pred_instances) != 0:
+                # compute new bboxes' classes, and remove irrelevant ones to not mess up NMS
+                new_boxes = pred_instances.pred_boxes.cpu().numpy()
+                # scale the boxes
+                new_boxes = scale_boxes(new_boxes,image.shape[0],image.shape[1],scale=cfg['detection']['scale_box'])
+                # if len(pred_instances)>0:
+                class_results, box_features, sims = text_prompt(new_boxes, tokenized_text, text_features, image, clip_model, preprocess, cfg["detection"]["class_sim_thres"]) #[N_box]
+                pred_instances.categories = class_results
+                pred_instances.scores += cfg['box_fusion']['clip_sim_coeff']*sims/100.0
+                pred_instances = pred_instances[(pred_instances.categories != "")]
 
         # Hold off on logging anything until now, since the delay might confuse the user in the visualizer.
         RT = sample["sensor_info"].gt.RT[-1].numpy()
@@ -197,28 +211,28 @@ def run(cfg, model, dataset, clip_model, preprocess, tokenized_text, text_featur
                 continue
             
             # add new properties for Instance3D predictions
-            pred_instances.categories = np.array(['None'] * len(pred_instances)) # Initialize category labels as 'None' for all predicted instances
+            # pred_instances.categories = np.array(['None'] * len(pred_instances)) # Initialize category labels as 'None' for all predicted instances
             pred_instances.cam_pose = torch.from_numpy(pose_np) # Convert camera pose from numpy to tensor and assign to instances
             pred_instances.frame_id = torch.tensor([count]).repeat(pose_np.shape[0]) # Assign current frame ID to all instances in this frame
             pred_instances.init_id = box_count+torch.arange(len(pred_instances)) # Create unique initial IDs for each instance based on global box count
             pred_instances.valid_num = torch.zeros(len(pred_instances)) # Initialize validation counter to zero for all instances
             pred_instances.pred_boxes_3d.transform2world(pred_instances.cam_pose) # Transform 3D bounding boxes from camera coordinates to world coordinates
             pred_instances.project_3d_boxes(sample["sensor_info"].wide.depth.K[-1].numpy(), H=image.shape[0],W=image.shape[1]) # Project 3D boxes to 2D image coordinates using camera intrinsics
-
+            
             # record how many boxes each keyframe has, so we know which box belongs to which frame
             box_count += len(pred_instances)
             box_manager.num_record[count] = box_count
  
             # first keyframe, initialize some data structures
-            if all_pred_box is None and count<gap:
+            if all_pred_box is None and (count<gap or per_frame_ins is None):
                 
-                #predict the semantic classes
-                boxes = pred_instances.pred_boxes.cpu().numpy()
-                #scale the boxes by
-                boxes = scale_boxes(boxes,image.shape[0],image.shape[1],scale=1.5)
+                # #predict the semantic classes
+                # boxes = pred_instances.pred_boxes.cpu().numpy()
+                # #scale the boxes by
+                # boxes = scale_boxes(boxes,image.shape[0],image.shape[1],scale=1.5)
 
-                class_results, box_features = text_prompt(boxes, tokenized_text, text_features, image, clip_model, preprocess, cfg["detection"]["class_sim_thres"]) #[N_box]
-                pred_instances.categories = class_results
+                # class_results, box_features = text_prompt(boxes, tokenized_text, text_features, image, clip_model, preprocess, cfg["detection"]["class_sim_thres"]) #[N_box]
+                # pred_instances.categories = class_results
 
                 all_pred_box = pred_instances
                 all_poses = pose_np
@@ -227,8 +241,9 @@ def run(cfg, model, dataset, clip_model, preprocess, tokenized_text, text_featur
                 #record the current frame boxes info
                 box_manager.init_new_predictions(len(pred_instances),0)
 
+                # all_pred_box = all_pred_box[(all_pred_box.categories != "")]
             else:
-                
+
                 box_manager.init_new_predictions(len(pred_instances),len(per_frame_ins))
 
                 num_before_cat = len(all_pred_box)
@@ -288,25 +303,28 @@ def run(cfg, model, dataset, clip_model, preprocess, tokenized_text, text_featur
                     if cfg['box_fusion']['use']:
                         Box_Fuser.boxfusion(all_pred_box, per_frame_ins, box_manager)
                 
-                    #predict the semantic classes of remaining new boxes
+                    # re-filter based on classes of associated bboxes
                     cur_keep_idx = [i-num_before_cat for i in keep_idx if i>=num_before_cat]
                     cur_keep_idx_in_all = [i for i in range(keep_idx.shape[0]) if keep_idx[i]>=num_before_cat]
 
-                    if len(cur_keep_idx)>0:
-                        boxes = pred_instances.pred_boxes.cpu().numpy()
-                        boxes = boxes[cur_keep_idx]
-                        # scale the boxes
-                        boxes = scale_boxes(boxes,image.shape[0],image.shape[1],scale=cfg['detection']['scale_box'])
-                        # if len(pred_instances)>0:
-                        class_results, box_features = text_prompt(boxes, tokenized_text, text_features, image, clip_model, preprocess, cfg["detection"]["class_sim_thres"]) #[N_box]
-                        all_pred_box.categories[cur_keep_idx_in_all] = class_results
+                    # if len(cur_keep_idx)>0:
+                    # if all_pred_box is not None and len(all_pred_box) > 0:
+                    #     boxes = all_pred_box.pred_boxes.cpu().numpy()
+                    #     boxes = boxes[cur_keep_idx]
+                    #     # scale the boxes
+                    #     boxes = scale_boxes(boxes,image.shape[0],image.shape[1],scale=cfg['detection']['scale_box'])
+                    #     # if len(pred_instances)>0:
+                    #     class_results, box_features = text_prompt(boxes, tokenized_text, text_features, image, clip_model, preprocess, cfg["detection"]["class_sim_thres"]) #[N_box]
+                    #     all_pred_box.categories[cur_keep_idx_in_all] = class_results
+                    #     label_mask = np.full((keep_idx.shape[0],), True)
+                    #     label_mask[cur_keep_idx_in_all] = (all_pred_box[cur_keep_idx_in_all].categories != "")
+                    #     all_pred_box = all_pred_box[label_mask]
 
                 else: # no new box
                     all_pred_box = all_pred_box[mask]
                     all_poses = all_poses[mask]
                     box_manager.update(keep_idx)
                     print(count, "new boxes have all been nms"," box_manager",box_manager.fusion_list)
-
             if re_vis:
                 visualize_online_boxes(all_pred_box, prefix="/device/wide", boxes_3d_name="pred_boxes_3d", log_instances_name="pred_instances",count=count,save=False,show_class=cfg["vis"]["show_class"],show_label=cfg["vis"]["show_label"]) 
 

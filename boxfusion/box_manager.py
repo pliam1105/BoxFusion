@@ -235,5 +235,12 @@ class BoxManager:
         second_mask = (max_values/min_values > ratio/2) & (max_values/second_values > ratio/2) & (second_values/min_values<2.0) & (second_values<0.15) & (min_values<0.15)
         mask = mask | second_mask
         return mask #.astype(int)
-
+    
+    def check_large_mask(self, box_3d, thres=0.5):
+        bos_size = box_3d[:, 3:]
+        max_values = torch.amax(bos_size, dim=1)  
+        # min_values = torch.amin(bos_size, dim=1) 
+        # second_values = torch.sort(bos_size, dim=1, descending=True)[0][:, 1]
+        mask = (max_values > thres)
+        return mask #.astype(int)
    

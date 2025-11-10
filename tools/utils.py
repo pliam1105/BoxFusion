@@ -72,10 +72,10 @@ def visualize_online_boxes(instances, prefix, boxes_3d_name="gt_boxes_3d", log_i
 
     exclude_mask = np.arange(ids.shape[0],dtype=int)
     # print(ids)
-    print(f'exclude mask before filtering: {exclude_mask}')
+    # print(f'exclude mask before filtering: {exclude_mask}')
     # print(ids.shape)
-    exclude_mask = np.where(ids[exclude_mask] != "")[0]
-    print(f'after: {exclude_mask}')
+    # exclude_mask = np.where(ids[exclude_mask] != "")[0]
+    # print(f'after: {exclude_mask}')
     
 
     rerun.log(
@@ -482,4 +482,4 @@ def text_prompt(boxes, class_prompt, text_features, img_path, clip_model, prepro
     max_id = max_id.cpu().numpy()
     categories = class_prompt[max_id]
 
-    return  categories, img_features
+    return  categories, img_features, max_values
