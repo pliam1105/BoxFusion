@@ -166,6 +166,7 @@ def run(cfg, model, dataset, clip_model, preprocess, tokenized_text, text_featur
                 # if len(pred_instances)>0:
                 class_results, box_features, sims = text_prompt(new_boxes, tokenized_text, text_features, image, clip_model, preprocess, cfg["detection"]["class_sim_thres"]) #[N_box]
                 pred_instances.categories = class_results
+                pred_instances.features = box_features
                 pred_instances.scores += cfg['box_fusion']['clip_sim_coeff']*sims/100.0
                 pred_instances = pred_instances[(pred_instances.categories != "")]
 
@@ -331,28 +332,59 @@ def run(cfg, model, dataset, clip_model, preprocess, tokenized_text, text_featur
         count+=1
         
         # save the results
-        if count == len(dataset)-1 or (count+gap)>len(dataset)-1:
-            end_time = time.time()
-            duration = end_time - start_time  
-            fps = count / duration
-            print(f"Cost: {duration:.2f} s", f"Average FPS: {fps:.2f}")
+        # if count == len(dataset)-1 or (count+gap)>len(dataset)-1:
+        #     end_time = time.time()
+        #     duration = end_time - start_time  
+        #     fps = count / duration
+        #     print(f"Cost: {duration:.2f} s", f"Average FPS: {fps:.2f}")
             
-            # save global boxes for evaluation
-            if cfg['data']['output_dir'] is not None and cfg["eval"]:
-                class_list = tokenized_text.tolist()
-                class_idx = np.array([class_list.index(c) for c in all_pred_box.categories]) #[N]
+        #     # save global boxes for evaluation
+        #     class_list = tokenized_text.tolist()
+        #     if cfg['data']['output_dir'] is not None and cfg["eval"]:
+        #         class_idx = np.array([class_list.index(c) for c in all_pred_box.categories]) #[N]
 
-                boxes_3d = all_pred_box.pred_boxes_3d.corners.cpu().numpy() # [N,8,3]
-                if cfg['dataset'] == 'scannet':
-                    boxes_3d = post_process(boxes_3d)
+        #         boxes_3d = all_pred_box.pred_boxes_3d.corners.cpu().numpy() # [N,8,3]
+        #         if cfg['dataset'] == 'scannet':
+        #             boxes_3d = post_process(boxes_3d)
                     
-                if boxes_3d.shape[0]>0:
-                    save_list = [[(int(0), (boxes_3d[n]), 1.0) for n in range(len(all_pred_box))]] # list of tuples class_idx[n]
+        #         if boxes_3d.shape[0]>0:
+        #             save_list = [[(int(0), (boxes_3d[n]), 1.0) for n in range(len(all_pred_box))]] # list of tuples class_idx[n]
 
-                    save_box(save_list, os.path.join(cfg['data']['output_dir'], video_id[0]+"_boxes.pkl"))
-                    
-            exit(0)
-            break
+        #             save_box(save_list, os.path.join(cfg['data']['output_dir'], video_id[0]+"_boxes.pkl"))
+                
+        #     if cfg['data']['output_dir'] is not None:
+        #         all_class_idx = np.array([class_list.index(c) for c in per_frame_ins.categories]) #[N]
+        #         all_boxes_3d = per_frame_ins.pred_boxes_3d.corners.cpu().numpy() # [N,8,3]
+        #         all_features = per_frame_ins.features
+        #         all_save_list = [[(all_class_idx[n], (all_boxes_3d[n]), all_features[n]) for n in range(len(per_frame_ins))]]
+        #         save_box(all_save_list, os.path.join(cfg['data']['output_dir'], "framewise_boxes.pkl"))
+        #     exit(0)
+        #     break
+    end_time = time.time()
+    duration = end_time - start_time  
+    fps = count / duration
+    print(f"Cost: {duration:.2f} s", f"Average FPS: {fps:.2f}")
+    
+    # save global boxes for evaluation
+    class_list = tokenized_text.tolist()
+    if cfg['data']['output_dir'] is not None and cfg["eval"]:
+        class_idx = np.array([class_list.index(c) for c in all_pred_box.categories]) #[N]
+
+        boxes_3d = all_pred_box.pred_boxes_3d.corners.cpu().numpy() # [N,8,3]
+        if cfg['dataset'] == 'scannet':
+            boxes_3d = post_process(boxes_3d)
+            
+        if boxes_3d.shape[0]>0:
+            save_list = [[(int(0), (boxes_3d[n]), 1.0) for n in range(len(all_pred_box))]] # list of tuples class_idx[n]
+
+            save_box(save_list, os.path.join(cfg['data']['output_dir'], video_id[0]+"_boxes.pkl"))
+        
+    if cfg['data']['output_dir'] is not None:
+        all_class_idx = np.array([class_list.index(c) for c in per_frame_ins.categories]) #[N]
+        all_boxes_3d = per_frame_ins.pred_boxes_3d.corners.cpu().numpy() # [N,8,3]
+        all_features = per_frame_ins.features
+        all_save_list = [[(all_class_idx[n], (all_boxes_3d[n]), all_features[n]) for n in range(len(per_frame_ins))]]
+        save_box(all_save_list, os.path.join(cfg['data']['output_dir'], "framewise_boxes.pkl"))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -426,5 +458,7 @@ if __name__ == "__main__":
         text_class = np.genfromtxt(args.class_txt, delimiter='\n', dtype=str) 
         text_features = torch.load(args.class_features).cuda()
         # print(text_features)
+
+    # print(len(dataset))
 
     run(cfg, model, dataset, clip_model, preprocess, text_class, text_features, augmentor, preprocessor, score_thresh=cfg['detection']['score_thresh'], viz_on_gt_points=args.viz_on_gt_points, gap=cfg["data"]["gap"], re_vis=cfg['vis']['rerun'])

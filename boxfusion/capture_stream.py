@@ -362,7 +362,7 @@ class CA1MDataset(IterableDataset):
         print("Waiting for frames...")
         video_id = self.video_id
         index = 0
-        while True:
+        while index < self.num_frames:
 
             #Step1: load data
             color_path = self.img_files[index]
