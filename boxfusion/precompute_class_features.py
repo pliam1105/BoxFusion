@@ -20,19 +20,23 @@ if __name__ == "__main__":
     with torch.no_grad():
         # torch.cuda.empty_cache()
 
-        clip_model, preprocess = load_clip(args.clip_path)
-        tokenizer = open_clip.get_tokenizer("ViT-H-14")
+        # clip_model, preprocess = load_clip(args.clip_path)
+        # tokenizer = open_clip.get_tokenizer("ViT-H-14")
 
         text_class = np.genfromtxt(args.class_txt, delimiter='\n', dtype=str) 
 
-        text = tokenizer(text_class)
+        from model.samclip_predictor import SAMCLIP
+        model_2d = SAMCLIP(None, "ViT-L/14")
+
+        # text = tokenizer(text_class)
 
         # text_features = []
         # for label in text:
         # text_feat = clip_model.encode_text(torch.unsqueeze(label,0).cuda())
         # text_features.append(text_feat)
-        text_features = clip_model.encode_text(text.cuda())
+        # text_features = clip_model.encode_text(text.cuda())
         # torch.cuda.empty_cache()
+        text_features = model_2d.extract_text_feature(text_class)
 
         # text_features = np.array(text_features.cpu())
 

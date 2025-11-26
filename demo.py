@@ -454,11 +454,14 @@ if __name__ == "__main__":
     
     if args.device is not None:
         model = model.to(args.device)
-        clip_model, preprocess = load_clip(args.clip_path)
+        # clip_model, preprocess = load_clip(args.clip_path)
+        from model.samclip_predictor import SAMCLIP
+        model_2d = SAMCLIP(None, "ViT-L/14")
         text_class = np.genfromtxt(args.class_txt, delimiter='\n', dtype=str) 
         text_features = torch.load(args.class_features).cuda()
         # print(text_features)
 
     # print(len(dataset))
 
-    run(cfg, model, dataset, clip_model, preprocess, text_class, text_features, augmentor, preprocessor, score_thresh=cfg['detection']['score_thresh'], viz_on_gt_points=args.viz_on_gt_points, gap=cfg["data"]["gap"], re_vis=cfg['vis']['rerun'])
+    # run(cfg, model, dataset, clip_model, preprocess, text_class, text_features, augmentor, preprocessor, score_thresh=cfg['detection']['score_thresh'], viz_on_gt_points=args.viz_on_gt_points, gap=cfg["data"]["gap"], re_vis=cfg['vis']['rerun'])
+    run(cfg, model, dataset, model_2d, None, text_class, text_features, augmentor, preprocessor, score_thresh=cfg['detection']['score_thresh'], viz_on_gt_points=args.viz_on_gt_points, gap=cfg["data"]["gap"], re_vis=cfg['vis']['rerun'])

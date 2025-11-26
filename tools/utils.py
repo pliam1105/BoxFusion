@@ -7,6 +7,7 @@ import open3d as o3d
 from pathlib import Path
 from PIL import Image
 from scipy.spatial.transform import Rotation
+from torchvision.transforms.functional import pil_to_tensor
 
 
 from boxfusion.batching import Sensors
@@ -14,6 +15,7 @@ from boxfusion.color import random_color_v2
 from boxfusion.capture_stream import ScannetDataset, CA1MDataset
 import pickle
 import open_clip
+import cv2
 
 def move_device_like(src: torch.Tensor, dst: torch.Tensor) -> torch.Tensor:
     try:
@@ -382,9 +384,17 @@ def scale_boxes(boxes, H, W, scale=1.2):
 def retriev(
     model, preprocess, elements, text_features, device
 ) -> int:
-    preprocessed_images = [preprocess(image).to(device) for image in elements]
-    stacked_images = torch.stack(preprocessed_images)
-    image_features = model.encode_image(stacked_images)
+    # preprocessed_images = [preprocess(image).to(device) for image in elements]
+    # stacked_images = torch.stack(preprocessed_images)
+    # image_features = model.encode_image(stacked_images)
+    # model_output = model.extract_image_feature(
+    #     gt_path,
+    #     [config.fusion.img_dim[1], config.fusion.img_dim[0]],
+    #     conf = cluster_config.sam_confidence
+    # )
+    images = [cv2.resize(np.asarray(image), (224, 224)) for image in elements]
+    model_output = model.get_batch_images_clip_features(images)
+    image_features, outliers = model_output
     image_features /= image_features.norm(dim=-1, keepdim=True)
     text_features /= text_features.norm(dim=-1, keepdim=True) # added
 

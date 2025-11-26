@@ -20,7 +20,7 @@ detection:
   floor_mask: True 
   floor_ratio: 15
   scale_box: 1.0
-  class_sim_thres: 30
+  class_sim_thres: 25
   size_max_thres: 1.0
 
 association:
