@@ -397,7 +397,7 @@ if __name__ == "__main__":
     parser.add_argument("--class_txt", default='./data/panoptic_categories_nomerge.txt', type=str, help="config_path")
     parser.add_argument("--class_features", default='./data/class_features.pt', type=str)
     parser.add_argument("--every-nth-frame", default=None, type=int, help="Load every `n` frames")
-    parser.add_argument("--viz-on-gt-points", default=False, action="store_true", help="Backproject the GT depth to form a point cloud in order to visualize the predictions")
+    parser.add_argument("--viz-on-gt-points", default=True, action="store_true", help="Backproject the GT depth to form a point cloud in order to visualize the predictions")
     parser.add_argument("--device", default="cpu", help="Which device to push the model to (cpu, mps, cuda)")
     parser.add_argument("--video-ids", nargs="+", help="Subset of videos to execute on. By default, all. Ignored if a tar file is explicitly given or in stream mode.")
 

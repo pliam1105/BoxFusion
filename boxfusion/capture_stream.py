@@ -104,6 +104,14 @@ def first_camera_to_upright(pose):
     rot_z_4x4[:3, :3] = rot_z
 
     return rot_z_4x4 @ pose
+    # return pose @ torch.linalg.inv(rot_z_4x4)
+
+def revert_pose(pose):
+    rot_z = torch.tensor(Rotation.from_euler('x', -np.pi/2.0).as_matrix()).float().to(pose)
+    rot_z_4x4 = torch.eye(4, device=pose.device).float()
+    rot_z_4x4[:3, :3] = rot_z
+
+    return torch.linalg.inv(rot_z_4x4) @ pose
 
 MAX_LONG_SIDE = 1024
 
@@ -461,6 +469,9 @@ class CA1MDataset(IterableDataset):
 
             T_gravity = get_camera_to_gravity_transform(wide.RT[-1], current_orientation, target=target_orientation)
             wide = wide.orient(current_orientation, target_orientation)
+
+            if self.first_camera:
+                wide.RT = revert_pose(wide.RT)
 
             '''
             Rotate IMG and Depth

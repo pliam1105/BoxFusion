@@ -14,7 +14,7 @@ from boxfusion.batching import Sensors
 from boxfusion.color import random_color_v2
 from boxfusion.capture_stream import ScannetDataset, CA1MDataset
 import pickle
-import open_clip
+# import open_clip
 import cv2
 
 def move_device_like(src: torch.Tensor, dst: torch.Tensor) -> torch.Tensor:
@@ -392,7 +392,7 @@ def retriev(
     #     [config.fusion.img_dim[1], config.fusion.img_dim[0]],
     #     conf = cluster_config.sam_confidence
     # )
-    images = [cv2.resize(np.asarray(image), (224, 224)) for image in elements]
+    images = [(cv2.resize(np.asarray(image), (224, 224)) if (image.width!=0 and image.height!=0) else np.zeros((224,224,3), dtype=np.uint8)) for image in elements]
     model_output = model.get_batch_images_clip_features(images)
     image_features, outliers = model_output
     image_features /= image_features.norm(dim=-1, keepdim=True)
