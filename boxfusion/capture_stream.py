@@ -336,6 +336,18 @@ class CA1MDataset(IterableDataset):
         self.cfg = cfg
 
         depth_intric = np.loadtxt(os.path.join(self.basedir, 'K_depth.txt')).reshape(3,3)
+        if os.path.exists(os.path.join(self.basedir, 'K_all.npy')):
+            self.all_intric = np.load(os.path.join(self.basedir, 'K_all.npy'))
+            print(f'all intrinsics shape: {self.all_intric.shape}')
+        else:
+            self.all_intric = None
+            print(f'no total intrinsics file found')
+        if os.path.exists(os.path.join(self.basedir, 'K_scales.npy')):
+            print(f'found depth scales')
+            self.scales = np.load(os.path.join(self.basedir, 'K_scales.npy'))
+        else:
+            print(f'no depth scales found, assuming all are 1')
+            self.scales = None
         self.K = np.array([[depth_intric[0,0], 0.0, depth_intric[0,2]],
                             [0.0, depth_intric[1,1], depth_intric[1,2]],
                             [0.0,0.0,1.0]])
@@ -375,6 +387,17 @@ class CA1MDataset(IterableDataset):
             #Step1: load data
             color_path = self.img_files[index]
             depth_path = self.depth_paths[index]
+
+            # update intrinsics based on this frame
+            if self.all_intric is not None:
+                self.K = np.array([[self.all_intric[index, 0,0], 0.0, self.all_intric[index, 0,2]],
+                                [0.0, self.all_intric[index, 1,1], self.all_intric[index, 1,2]],
+                                [0.0,0.0,1.0]])
+                self.fx = self.K[0,0]
+                self.fy = self.K[1,1]
+                self.cx = self.K[0,2]
+                self.cy = self.K[1,2]
+                print(f'updated intrinsics based on current frame')
    
             color_data = cv2.imread(color_path)
 
@@ -386,6 +409,10 @@ class CA1MDataset(IterableDataset):
             color_data = cv2.cvtColor(color_data, cv2.COLOR_BGR2RGB)
             color_data = color_data 
             depth_data = depth_data.astype(np.float32) / self.depth_scale #* self.sc_factor
+
+            if self.scales is not None:
+                print(f'depth scale: {self.scales[index]}')
+                depth_data *= 1/self.scales[index]
 
             H, W = depth_data.shape
             color_data = cv2.resize(color_data, (W, H))
